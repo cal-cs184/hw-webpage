@@ -1,7 +1,171 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Homework 1 index.html here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>CS 184/284A Rasterizer</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+<h1 align="middle">CS 184/284A: Computer Graphics and Imaging, Spring 2024</h1>
+<h1 align="middle">Homework 1: Rasterizer</h1>
+<h2 align="middle">Alejandro Dominguez</h2>
+
+<br><br>
+
+<div>
+
+<h2 align="middle">Overview</h2>
+<p>Give a high-level overview of what you implemented in this homework Think about what you've built as a whole. Share your thoughts on what interesting things you've learned from completing the homework.</p>
+
+<h2 align="middle">Section I: Rasterization</h2>
+
+<h3 align="middle">Part 1: Rasterizing single-color triangles</h3>
+
+<p>To rasterize a triangle I find the bounding box of the triangle. This may require rounding the input of the vertices because it is not an integer. Then I iterate through each point in the bounding box and run the three line test. In the case that the pixel is in the triangle I will fill that pixel with the color of the input.</p>
+<p>This algorithm is just as efficient as going through every point in the bounding box because it does go throught every point.</p>
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/interesting-1.png" align="middle" width="400px"/>
+        <figcaption align="middle">There is clear aliasing at this point in the triangle.</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+
+<h3 align="middle">Part 2: Antialiasing triangles</h3>
+<p>To supersample I will set the bounds of each triangle as per usual but I will sample each pixel at the sample rate. I will take the samples from the center of the subsamples. When it is time to fill the pixel I make sure to fill the sample buffer which is a buffer that is sample_rate times greater than the rgb buffer. When I resolve to the target buffer I will average the value of all sample_rate number of entries in the sample buffer. In the case that the frame needs resizing we need to make sure that we can resize the sample_buffer accordingly by the sample rate. Super sampling helps eliminate some aliasing in these images.</p>
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/interesting-1.png" align="middle" width="400px"/>
+        <figcaption align="middle">There is clear aliasing at this point in the triangle.</figcaption>
+      </td>
+      <td>
+        <img src="images/interesting-2.png" align="middle" width="400px"/>
+        <figcaption align="middle">(4 samples per pixel) There is still some aliasing here but we start to see the point closing.</figcaption>
+      </td>
+      <td>
+        <img src="images/interesting-3.png" align="middle" width="400px"/>
+        <figcaption align="middle">(16 samples per pixel) There is far less aliasing and we see that the gap is closed but the line is very skinny and faint.</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+
+<h3 align="middle">Part 3: Transforms</h3>
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/robot.png" align="middle" width="400px"/>
+        <figcaption align="middle">I wanted my robot to be a futbol captain with a captain's armband on his arm. I did this by translating and rotating his arms.</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+
+<h2 align="middle">Section II: Sampling</h2>
+
+<h3 align="middle">Part 4: Barycentric coordinates</h3>
+<p>Barycentric coordinates in my own words are a way to describe what the relationship between a point in a triangle has between its vertices. That is to say that usually we think of a point to be a coordiate that has an infinite range for x and y. Barycentric coordinates are a new way of relating the point but to new reference points and it is limited to the sum of the 3 coordinates needing to be equal to one. I see it as a weigthed sum that describes where a point is in a triangle and the weight assigns the color. Each weight is related to the distance from the vertices. Figure 2 shows a triangle and the colors here blend proportionally to their distance from their respective vertices.</p>
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/color_wheel.png" align="middle" width="400px"/>
+      </td>
+      <td>
+        <img src="images/color_tr.png" align="middle" width="400px"/>
+        <figcaption align="middle">Fig 2.</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+
+<h3 align="middle">Part 5: "Pixel sampling" for texture mapping</h3>
+<p>For both pixel sampling methods we must move from x,y space to u,v space using barycentric conversion. Nearest pixel sampling is like sampling in part one however we must determine the closest pixel to our point u,v because the map from x,y to u,v may cause integers to become fractions and thus not be perfectly placed on a pixel. Bilinear sampling makes a weighted sum of the 4 nearest pixels to the u,v point using 2 linear interpolations, one for x and one for y. These interpolations give the weights and we return the weighted sum of the colors</p>
+  <div align="middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+          <img src="images/nearest-1.png" align="middle" width="400px"/>
+        </td>
+        <td>
+          <img src="images/bilinear-1.png" align="middle" width="400px"/>
+          <figcaption align="middle">Bilinear wins here because of the color clarity we get on the clock face.</figcaption>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <img src="images/nearest-16.png" align="middle" width="400px"/>
+        </td>
+        <td>
+          <img src="images/bilinear-16.png" align="middle" width="400px"/>
+          <figcaption align="middle"> Here there is no true difference between bilinear and nearest</figcaption>
+        </td>
+      </tr>
+    </table>
+  </div>
+  <p>There is likely to be a greater difference between nearest and bilinear if the change from high to low frequency is very pronounced where bilinear will benefit.</p>
+
+<h3 align="middle">Part 6: "Level sampling" with mipmaps for texture mapping</h3>
+<p>Level sampling mitigates blurring and aliasing on textures using mipmaps. The reason there is an issue is because with applying the same sampling method across the same texture we may see that some areas with high variation in frequency have greater clarity but lower frequency changes lose their sharpness. To mitigate we use level sampling which is where we create a mipmap which are lower resolution images of the texture. This variation in resolution allows us to sample from textures with higher resoltuions in the case that clarity is needed over antialiasing and vice versa.</p>
+<p>To implement level sampling we must first transfer our x,y to u,v space as well as our u,v differentials. Using this differential and applying the formula from class we find the value for d and then round it to the closest level. Depending on the level sampling method we may want to use trilinear sampling which requires us to do a linear interpolation of the next highest level with the current level.</p>
+<p>The tradeoff with level sampling is that it is more intensive to compute than the other two methods, however multiple pixel sampling will become slower as the number of samples per pixel increases. The downside of pixel sampling is the aliasing that appears.</p>
+  <div align="middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+          <img src="images/zero_nearest.png" align="middle" width="400px"/>
+          <figcaption align="middle">L_Zero and P_Nearest.</figcaption>
+        </td>
+        <td>
+          <img src="images/zero-linear.png" align="middle" width="400px"/>
+          <figcaption align="middle">L_Zero and P_Linear.</figcaption>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <img src="images/nearest-linear.png" align="middle" width="400px"/>
+          <figcaption align="middle">L_Nearest and P_Linear.</figcaption>
+        </td>
+        <td>
+          <img src="images/nearest-nearest.png" align="middle" width="400px"/>
+          <figcaption align="middle">L_Nearest and P_Nearest.</figcaption>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+
+<h2 align="middle">Section III: Art Competition</h2>
+<p>If you are not participating in the optional art competition, don't worry about this section!</p>
+
+<h3 align="middle">Part 7: Draw something interesting!</h3>
+
+</body>
 </html>
